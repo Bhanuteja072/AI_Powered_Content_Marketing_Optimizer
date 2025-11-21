@@ -1,0 +1,4 @@
+﻿pandas==2.2.3
+google-api-python-client
+
+python-dotenv==1.0.0
