@@ -55,4 +55,4 @@ for tag in soup.find_all("a", href=True):
 df = pd.DataFrame(pins).drop_duplicates(subset="pin_url")
 df.to_csv(OUTPUT_CSV, index=False, encoding="utf-8")
 
-print(f"Fetched {len(df)} Pinterest posts for '{SEARCH_QUERY}'")
+print(f"Fetched {len(df)} Pinterest postss for '{SEARCH_QUERY}'")
