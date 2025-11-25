@@ -2,3 +2,7 @@
 google-api-python-client
 
 python-dotenv==1.0.0
+requests
+langchain_groq
+selenium
+beautifulsoup4
