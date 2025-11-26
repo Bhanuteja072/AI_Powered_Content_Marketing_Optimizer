@@ -5,6 +5,9 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import time
 from pathlib import Path
+import requests
+import re
+from datetime import datetime, timezone
 
 SEARCH_QUERY = "AI content marketing"
 DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
@@ -44,15 +47,52 @@ pins = []
 for tag in soup.find_all("a", href=True):
     href = tag["href"]
     if "/pin/" in href:
+        pin_url = f"https://www.pinterest.com{href}"
         img_tag = tag.find("img")
         pins.append({
+            "pin_id": href.rstrip("/").split("/")[-1],
             "title": tag.get("aria-label") or tag.text.strip(),
-            "pin_url": f"https://www.pinterest.com{href}",
+            "pin_url": pin_url,
             "image_url": img_tag.get("src") if img_tag else None,
             "alt_text": img_tag.get("alt") if img_tag and img_tag.has_attr("alt") else None
         })
 
-df = pd.DataFrame(pins).drop_duplicates(subset="pin_url")
+details = []
+for pin in pins:
+    meta = {}
+    try:
+        resp = requests.get(
+            "https://www.pinterest.com/oembed.json",
+            params={"url": pin["pin_url"]},
+            timeout=10,
+        )
+        if resp.ok:
+            meta = resp.json()
+    except requests.RequestException:
+        pass
+
+    description = meta.get("title") or pin["title"] or ""
+    tags = "|".join(
+        {t.lower().lstrip("#") for t in re.findall(r"#\w+", description)}
+    )
+    fetch_ts = datetime.now(timezone.utc).isoformat()
+    details.append({
+        "pin_id": pin["pin_id"],
+        "title": (pin["title"] or "").strip(),
+        "description": description.strip(),
+        "author": meta.get("author_name", "").strip(),
+        "created_at": "",
+        "repin_count": 0,
+        "comment_count": 0,
+        "link": meta.get("url") or pin["pin_url"],
+        "tags": tags,
+        "image_url": pin["image_url"],
+        "alt_text": pin["alt_text"],
+        "pin_url": pin["pin_url"],
+        "fetch_ts": fetch_ts,
+    })
+
+df = pd.DataFrame(details).drop_duplicates(subset="pin_id")
 df.to_csv(OUTPUT_CSV, index=False, encoding="utf-8")
 
-print(f"Fetched {len(df)} Pinterest postss for '{SEARCH_QUERY}'")
+print(f"Fetched {len(df)} Pinterest posts for '{SEARCH_QUERY}'")
