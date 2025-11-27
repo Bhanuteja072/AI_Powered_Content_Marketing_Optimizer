@@ -6,3 +6,4 @@ requests
 langchain_groq
 selenium
 beautifulsoup4
+pytrends

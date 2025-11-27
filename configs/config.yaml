@@ -1,2 +1,13 @@
 ﻿project_name: AI_Content_Optimizer
 version: 0.1.0
+normalization:
+  languages: ["en"]
+  min_text_len: 10
+  timezone: "UTC"
+  raw_paths:
+    youtube: data/raw/youtube_search_200_results.csv
+    twitter: data/raw/twitter_search_10_results.csv
+    reddit: data/raw/reddit_search_100_results.csv
+    pinterest: data/raw/pinterest_posts_detailed.csv
+    google_trends: data/raw/google_trends_selected.csv
+  output_path: data/processed/combined_engagement_data.csv
