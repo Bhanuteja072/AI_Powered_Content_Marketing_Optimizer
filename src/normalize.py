@@ -131,60 +131,60 @@ def normalize_youtube(df: pd.DataFrame) -> List[Dict[str, Any]]:
     return rows
 
 
-def normalize_google_trends(df: pd.DataFrame) -> List[Dict[str, Any]]:
-    rows: List[Dict[str, Any]] = []
-    if df.empty:
-        return rows
+# def normalize_google_trends(df: pd.DataFrame) -> List[Dict[str, Any]]:
+#     rows: List[Dict[str, Any]] = []
+#     if df.empty:
+#         return rows
 
-    date_col = next((c for c in ("date", "time", "week") if c in df.columns), None)
-    fetch_col = "fetch_ts" if "fetch_ts" in df.columns else None
+#     date_col = next((c for c in ("date", "time", "week") if c in df.columns), None)
+#     fetch_col = "fetch_ts" if "fetch_ts" in df.columns else None
 
-    if "keyword" in df.columns:
-        long_df = df.copy()
-    else:
-        if not date_col:
-            return rows
-        value_cols = [c for c in df.columns if c not in {date_col, "isPartial", "partial", fetch_col}]
-        if not value_cols:
-            return rows
-        long_df = df.melt(id_vars=[date_col], value_vars=value_cols, var_name="keyword", value_name="interest")
+#     if "keyword" in df.columns:
+#         long_df = df.copy()
+#     else:
+#         if not date_col:
+#             return rows
+#         value_cols = [c for c in df.columns if c not in {date_col, "isPartial", "partial", fetch_col}]
+#         if not value_cols:
+#             return rows
+#         long_df = df.melt(id_vars=[date_col], value_vars=value_cols, var_name="keyword", value_name="interest")
 
-    for _, row in long_df.iterrows():
-        keyword = safe_str(row.get("keyword") or row.get("term") or row.get("query"))
-        if not keyword:
-            continue
+#     for _, row in long_df.iterrows():
+#         keyword = safe_str(row.get("keyword") or row.get("term") or row.get("query"))
+#         if not keyword:
+#             continue
 
-        out = base_row("google_trends")
-        date_value = row.get(date_col) if date_col else row.get("date")
-        iso_ts = parse_datetime(date_value) if date_value else ""
-        out["post_id"] = safe_str(f"{keyword}:{date_value}") or keyword
-        out["author_id"] = "google_trends"
-        out["author_name"] = "Google Trends"
-        out["posted_at"] = iso_ts
+#         out = base_row("google_trends")
+#         date_value = row.get(date_col) if date_col else row.get("date")
+#         iso_ts = parse_datetime(date_value) if date_value else ""
+#         out["post_id"] = safe_str(f"{keyword}:{date_value}") or keyword
+#         out["author_id"] = "google_trends"
+#         out["author_name"] = "Google Trends"
+#         out["posted_at"] = iso_ts
 
-        interest = row.get("interest")
-        if interest is None:
-            for candidate in ("value", "score", "popularity", keyword):
-                if candidate in row and not pd.isna(row[candidate]):
-                    interest = row[candidate]
-                    break
-        interest = safe_int(interest)
+#         interest = row.get("interest")
+#         if interest is None:
+#             for candidate in ("value", "score", "popularity", keyword):
+#                 if candidate in row and not pd.isna(row[candidate]):
+#                     interest = row[candidate]
+#                     break
+#         interest = safe_int(interest)
 
-        out["text"] = clean_text(f"Google Trends interest for '{keyword}' on {safe_str(date_value)} is {interest}.")
-        out["url"] = ""
-        out["like_count"] = interest
-        out["view_count"] = interest
-        out["tags"] = keyword.lower()
-        out["language"] = "en"
-        out["fetch_ts"] = safe_str(row.get(fetch_col)) if fetch_col else ""
-        out["source_meta"] = json.dumps({
-            "keyword": keyword,
-            "interest": interest,
-            "raw_date": safe_str(date_value),
-        })
-        rows.append(out)
+#         out["text"] = clean_text(f"Google Trends interest for '{keyword}' on {safe_str(date_value)} is {interest}.")
+#         out["url"] = ""
+#         out["like_count"] = interest
+#         out["view_count"] = interest
+#         out["tags"] = keyword.lower()
+#         out["language"] = "en"
+#         out["fetch_ts"] = safe_str(row.get(fetch_col)) if fetch_col else ""
+#         out["source_meta"] = json.dumps({
+#             "keyword": keyword,
+#             "interest": interest,
+#             "raw_date": safe_str(date_value),
+#         })
+#         rows.append(out)
 
-    return rows
+#     return rows
 
 def normalize_twitter(df: pd.DataFrame) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
@@ -233,6 +233,36 @@ def epoch_to_iso(value: Any) -> str:
         return ""
 
 
+# def normalize_reddit(df: pd.DataFrame) -> List[Dict[str, Any]]:
+#     rows: List[Dict[str, Any]] = []
+#     for _, row in df.iterrows():
+#         out = base_row("reddit")
+#         out["post_id"] = safe_str(row.get("id"))
+#         author = safe_str(row.get("author"))
+#         out["author_id"] = author.strip()
+#         out["author_name"] = author.strip()
+#         out["posted_at"] = epoch_to_iso(row.get("created_utc"))
+#         out["text"] = join_text(row.get("title"), row.get("selftext"))
+#         out["url"] = (row.get("url") or row.get("permalink") or "").strip()
+#         out["like_count"] = safe_int(row.get("ups"))
+#         out["comment_count"] = safe_int(row.get("num_comments"))
+#         subreddit = (row.get("subreddit") or "").strip()
+#         tags = []
+#         if subreddit:
+#             tags.append(f"subreddit:{subreddit.lower()}")
+#         selftext = safe_str(row.get("selftext"))
+#         hashtags = [match.group(1).lower() for match in HASHTAG_RE.finditer(selftext)]
+#         tags.extend(hashtags)
+#         out["tags"] = "|".join(tags)
+#         out["language"] = (row.get("language") or "").strip().lower()
+#         out["source_meta"] = json.dumps({
+#             "subreddit": subreddit,
+#         })
+#         rows.append(out)
+#     return rows
+
+
+
 def normalize_reddit(df: pd.DataFrame) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
     for _, row in df.iterrows():
@@ -244,8 +274,17 @@ def normalize_reddit(df: pd.DataFrame) -> List[Dict[str, Any]]:
         out["posted_at"] = epoch_to_iso(row.get("created_utc"))
         out["text"] = join_text(row.get("title"), row.get("selftext"))
         out["url"] = (row.get("url") or row.get("permalink") or "").strip()
+
         out["like_count"] = safe_int(row.get("ups"))
         out["comment_count"] = safe_int(row.get("num_comments"))
+
+        crosspost_list = row.get("crosspost_parent_list")
+        crosspost_count = len(crosspost_list) if isinstance(crosspost_list, list) else 0
+        out["share_count"] = safe_int(row.get("num_crossposts")) or crosspost_count
+
+        derived_views = out["like_count"] + out["comment_count"] + out["share_count"]
+        out["view_count"] = safe_int(row.get("view_count")) or max(derived_views, 1)
+
         subreddit = (row.get("subreddit") or "").strip()
         tags = []
         if subreddit:
@@ -260,7 +299,6 @@ def normalize_reddit(df: pd.DataFrame) -> List[Dict[str, Any]]:
         })
         rows.append(out)
     return rows
-
 
 def normalize_pinterest(df: pd.DataFrame) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
@@ -386,7 +424,7 @@ def main():
     rows.extend(normalize_twitter(twitter_df))
     rows.extend(normalize_reddit(reddit_df))
     rows.extend(normalize_pinterest(pinterest_df))
-    rows.extend(normalize_google_trends(google_trends_df))
+    # rows.extend(normalize_google_trends(google_trends_df))
 
     rows = filter_rows(rows, languages, min_len)
     rows = dedupe_rows(rows)
