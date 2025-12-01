@@ -105,9 +105,18 @@ def fetch_tweets(total_needed):
 def main():
     """Main entry point."""
     print("Fetching tweets...")
-    df = fetch_tweets(TOTAL_NEEDED)
+    df_new = fetch_tweets(TOTAL_NEEDED)
+
+    if OUTPUT_CSV.exists():
+        df_existing = pd.read_csv(OUTPUT_CSV)
+        df = pd.concat([df_existing, df_new], ignore_index=True, sort=False)
+        df = df.drop_duplicates(subset="tweet_id", keep="first")
+        print(f"Appended {len(df_new)} new rows (total now {len(df)})")
+    else:
+        df = df_new
+        print(f"Fetched {len(df)} tweets")
+
     df.to_csv(OUTPUT_CSV, index=False, encoding="utf-8")
-    print(f"Fetched {len(df)} tweets")
     print(f"Saved to {OUTPUT_CSV}")
 
 
