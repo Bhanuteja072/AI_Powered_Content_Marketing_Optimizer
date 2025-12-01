@@ -7,3 +7,9 @@ langchain_groq
 selenium
 beautifulsoup4
 pytrends
+matplotlib
+seaborn
+ipython
+nltk
+textblob
+textstat
