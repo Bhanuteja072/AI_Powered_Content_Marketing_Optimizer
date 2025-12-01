@@ -11,9 +11,16 @@ load_dotenv()
 API_KEY = os.getenv("YOUTUBE_API_KEY")
 if not API_KEY:
     raise RuntimeError("YOUTUBE_API_KEY not set in environment (.env).")
-
-QUERY = "content generation"
-TOTAL_NEEDED = 200
+QUERIES = [
+    "content generation",
+    "AI content marketing",
+    "AI marketing tools",
+    "AI content strategy",
+    "marketing automation AI",
+    "AI video generation",
+    "AI content analytics",
+]
+TOTAL_NEEDED_PER_QUERY = 50
 PAGE_SIZE = 50
 
 # Replace absolute path with project-relative path
@@ -89,14 +96,21 @@ def fetch_videos(query: str, total_needed: int) -> pd.DataFrame:
 
 
 def main():
-    youtube = build("youtube", "v3", developerKey=API_KEY)
-    resp = youtube.search().list(part="snippet", q=QUERY, type="video", maxResults=50).execute()
-    print(len(resp.get("items", [])), "items", "nextPageToken:", resp.get("nextPageToken"))
+    df_list = []
+    for query in QUERIES:
+        print(f"🔎 Fetching YouTube data for query: {query}")
+        df_query = fetch_videos(query, TOTAL_NEEDED_PER_QUERY)
+        df_query["search_query"] = query
+        df_list.append(df_query)
 
-    df = fetch_videos(QUERY, TOTAL_NEEDED)
+    if not df_list:
+        print("⚠️ No data fetched.")
+        return
+
+    final_df = pd.concat(df_list, ignore_index=True).drop_duplicates(subset=["video_id"])
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    df.to_csv(OUTPUT_CSV, index=False, encoding="utf-8")
-    print(f"Fetched results: {len(df)}")
+    final_df.to_csv(OUTPUT_CSV, index=False, encoding="utf-8")
+    print(f"Fetched results: {len(final_df)}")
     print(f"Saved to {OUTPUT_CSV}")
 
 
