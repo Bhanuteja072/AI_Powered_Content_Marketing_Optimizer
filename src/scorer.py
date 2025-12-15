@@ -133,6 +133,43 @@ def optimize_post(text: str, trending_keywords: List[str], hashtag_count_overrid
         "final_score": round(float(score), 3),
     }
 
+
+def build_scoring_summary(df: pd.DataFrame, trending_keywords: List[str]) -> pd.DataFrame:
+    """Return a scored summary for each row in df using scorer helpers."""
+    if df.empty:
+        return df.copy()
+
+    records = []
+    keywords = trending_keywords or []
+    for _, row in df.iterrows():
+        text = str(row.get("generated_text", ""))
+        variation = row.get("variation_no")
+        topic = row.get("topic", "")
+        tone = row.get("tone", "")
+
+        score_val = score_post(text, keywords)
+        feature = optimize_post(text, keywords)
+
+        records.append(
+            {
+                "topic": topic,
+                "tone": tone,
+                "variation_no": variation,
+                "generated_text": text,
+                "score": score_val,
+                "word_count": feature["word_count"],
+                "hashtags": feature["hashtags"],
+                "sentiment": feature["sentiment"],
+                "keyword_hits": feature["keyword_hits"],
+                "readability_bonus": feature["readability_bonus"],
+                "length_bonus": feature["length_bonus"],
+                "hashtag_bonus": feature["hashtag_bonus"],
+                "final_score": feature["final_score"],
+            }
+        )
+
+    return pd.DataFrame(records).sort_values("final_score", ascending=False).reset_index(drop=True)
+
 def load_hashtag_counts(hashtags_dir: Path) -> dict[str, int]:
     """
     Aggregate hashtag counts per post_id from the per‑platform hashtag CSVs.
