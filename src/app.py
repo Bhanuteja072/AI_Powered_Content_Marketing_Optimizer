@@ -318,7 +318,6 @@ def main() -> None:
 				analysis_df = _run_sentiment_pipeline(latest_df)
 				SENTIMENT_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 				analysis_df.to_csv(SENTIMENT_OUTPUT_PATH, index=False, encoding="utf-8")
-			st.success(f"Sentiment analysis saved to {SENTIMENT_OUTPUT_PATH.name}.")
 			st.dataframe(
 				analysis_df[[
 					"variation_no",
@@ -372,7 +371,6 @@ def main() -> None:
 				latest_texts = set(latest_df["generated_text"].astype(str).str.strip())
 				filtered = filtered[filtered["generated_text"].astype(str).str.strip().isin(latest_texts)]
 				if filtered.empty:
-					st.warning("Could not match latest posts inside metrics output; showing all rows instead.")
 					filtered = metrics_result["df_out"]
 			else:
 				st.info("No recent generation found; showing complete metrics table.")
