@@ -13,3 +13,5 @@ ipython
 nltk
 textblob
 textstat
+slack_sdk
+streamlit
