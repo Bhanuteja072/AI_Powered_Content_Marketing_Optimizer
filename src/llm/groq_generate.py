@@ -9,7 +9,7 @@ api_key = os.getenv("GROQ_API_KEY")
 if not api_key:
     raise RuntimeError("GROQ_API_KEY missing in .env")
 
-llm = ChatGroq(api_key=api_key, model_name="openai/gpt-oss-20b")
+llm = ChatGroq(api_key=api_key, model_name="openai/gpt-oss-120b")
 parser = StrOutputParser()
 
 prompt = ChatPromptTemplate.from_template(
