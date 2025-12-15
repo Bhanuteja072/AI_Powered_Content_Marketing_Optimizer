@@ -246,11 +246,11 @@ def main() -> None:
 			"Must-use keywords (comma separated)",
 			help="List any additional keywords that should appear in generated posts.",
 		)
-		available_hashtags = max(1, len(context.prompt_hashtags))
+		available_hashtags = max(1, 10)
 		max_hashtags = st.slider(
 			"Hashtags to include",
 			min_value=1,
-			max_value=available_hashtags,
+			max_value=10,
 			value=available_hashtags,
 			step=1,
 		)
