@@ -188,6 +188,7 @@ def main() -> None:
 	st.set_page_config(page_title="Content Generation", layout="wide")
 	st.title("AI-Powered Content Generator")
 	st.caption("Generate, score, and optimize social posts using your latest trend signals.")
+	st.info("This is a simulated campaign test based on historical trends.")
 
 	context = get_generation_context()
 	posting_recommendations = _load_posting_recommendations()
@@ -302,9 +303,52 @@ def main() -> None:
 			hour_col.metric("Best hour to publish", hour_value, delta=hour_delta)
 		st.session_state["latest_posts"] = scored_df
 		st.session_state["latest_keywords"] = selected_keywords
-		for _, row in scored_df.iterrows():
-			st.markdown(f"**Variation {int(row['variation_no'])} – Score {row['score']:.2f}**")
+		if not scored_df.empty:
+			winner = scored_df.iloc[0]
+			st.success(f"Recommended Winner: Variation A (Control) (Score {winner['score']:.2f})")
+			summary_table = build_scoring_summary(scored_df, selected_keywords)
+			winner_features = summary_table.iloc[0]
+			reasons = []
+			kw_hits = int(winner_features.get("keyword_hits", 0))
+			if kw_hits:
+				reasons.append(f"Better keyword coverage: {kw_hits} target terms present")
+			sent_val = float(winner_features.get("sentiment", 0.0))
+			if sent_val > 0.15:
+				reasons.append(f"Positive sentiment (+{sent_val:.2f})")
+			elif sent_val < -0.15:
+				reasons.append(f"Strong stance (sentiment {sent_val:.2f})")
+			wc = int(winner_features.get("word_count", 0))
+			if 20 <= wc <= 80:
+				reasons.append(f"Optimal length for feed (≈{wc} words)")
+			htg = int(winner_features.get("hashtags", 0))
+			if 1 <= htg <= 3:
+				reasons.append(f"Clean hashtag use ({htg} tags)")
+			if reasons:
+				st.markdown("**Why this wins:**\n- " + "\n- ".join(reasons))
+		st.markdown("### A/B Test Results")
+		for idx, row in scored_df.iterrows():
+			letter = chr(65 + idx) if idx < 26 else str(idx + 1)
+			label = f"{letter} (Control)" if idx == 0 else letter
+			badge = " 🏅 Best Choice" if idx == 0 else ""
+			score_val = float(row.get("score", 0.0))
+			if score_val >= 5:
+				prediction = "🔥 High Potential"
+			elif score_val >= 3:
+				prediction = "⚠️ Medium Potential"
+			else:
+				prediction = "❌ Low Potential"
+			text_body = str(row.get("generated_text", ""))
+			word_guess = len(text_body.split())
+			hashtag_guess = text_body.count("#")
+			if word_guess <= 80 and hashtag_guess <= 3:
+				platform_hint = "Suited for Twitter"
+			elif hashtag_guess >= 5:
+				platform_hint = "Suited for Instagram"
+			else:
+				platform_hint = "Suited for LinkedIn"
+			st.markdown(f"**Variation {label} – Score {row['score']:.2f}{badge}**  · {prediction}")
 			st.write(row["generated_text"])
+			st.caption(platform_hint)
 			st.caption(row.get("generated_at", ""))
 			st.divider()
 
